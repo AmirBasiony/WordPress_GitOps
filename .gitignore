@@ -1,4 +1,4 @@
 couldflare_API_token
-*tfvars*
-.terraform*
-*tfstate*
+wordpress-terraform/*tfvars*
+wordpress-terraform/.terraform*
+wordpress-terraform/*tfstate*
