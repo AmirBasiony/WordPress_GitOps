@@ -1,0 +1,6 @@
+collections:
+  - name: amazon.aws
+  - name: community.mysql
+
+# Install the collections using the requirements file
+# ansible-galaxy collection install -r requirements.yml --force

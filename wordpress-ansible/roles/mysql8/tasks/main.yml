@@ -1,0 +1,31 @@
+---
+- name: Preflight | Validate mysql_root_password is set
+  ansible.builtin.assert:
+    that:
+      - mysql_root_password | length >= 12
+    fail_msg: "mysql_root_password must be set and >= 12 chars."
+
+- name: Install MySQL 8 (Debian/Ubuntu)
+  ansible.builtin.import_tasks: install_debian.yml
+  when: ansible_os_family == "Debian"
+
+- name: Install MySQL 8 (RedHat/Amazon Linux)
+  ansible.builtin.import_tasks: install_redhat.yml
+  when: ansible_os_family in ["RedHat"]
+
+- name: Configure MySQL + create WordPress DB/user
+  ansible.builtin.import_tasks: configure.yml
+
+- name: Configure daily backups (cron)
+  ansible.builtin.import_tasks: backup.yml
+
+# - name: Validate MySQL is responding
+#   ansible.builtin.command: "mysqladmin -s /var/run/mysqld/mysqld.sock ping"
+#   register: mysql_ping
+#   changed_when: false
+
+# - name: Assert MySQL ping ok
+#   ansible.builtin.assert:
+#     that:
+#       - "'mysqld is alive' in mysql_ping.stdout"
+#     fail_msg: "MySQL is not responding."

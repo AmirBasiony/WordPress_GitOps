@@ -1,0 +1,39 @@
+---
+- name: Install dependencies
+  ansible.builtin.package:
+    name:
+      - curl
+      - ca-certificates
+    state: present
+
+# MySQL official repo instructions (general). :contentReference[oaicite:1]{index=1}
+- name: Download MySQL repo RPM (EL9 works for AL2023-like, adjust if needed)
+  ansible.builtin.get_url:
+    url: "https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm"
+    dest: "/tmp/mysql80-community-release.rpm"
+    mode: "0644"
+
+- name: Install MySQL repo RPM
+  ansible.builtin.command: "dnf -y install /tmp/mysql80-community-release.rpm"
+  args:
+    creates: "/etc/yum.repos.d/mysql-community.repo"
+  when: ansible_pkg_mgr == "dnf"
+
+- name: Install MySQL repo RPM (yum)
+  ansible.builtin.command: "yum -y install /tmp/mysql80-community-release.rpm"
+  args:
+    creates: "/etc/yum.repos.d/mysql-community.repo"
+  when: ansible_pkg_mgr == "yum"
+
+- name: Install MySQL server
+  ansible.builtin.package:
+    name:
+      - mysql-community-server
+      - python3-PyMySQL
+    state: present
+
+- name: Ensure MySQL service running
+  ansible.builtin.service:
+    name: mysqld
+    state: started
+    enabled: true

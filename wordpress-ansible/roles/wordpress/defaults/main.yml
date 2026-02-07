@@ -1,0 +1,16 @@
+wp_domain: "_"
+wp_root: /var/www/wordpress
+# Artifact deployment
+wp_deploy_method: "artifact"   # artifact | git | download
+wp_artifact_name: "wordpress_app.tar.gz"
+
+# Control wp-config handling
+wp_manage_wp_config: true     # keep remote wp-config.php as-is
+wp_force_wp_config: true      # overwrite if true
+
+# DB env vars used by your wp-config.php
+wp_db_env:
+  DB_NAME: "wordpress_db"
+  DB_USER: "wp_user"
+  DB_PASSWORD: "admin@obelion"
+  DB_HOST: "127.0.0.1:3306"

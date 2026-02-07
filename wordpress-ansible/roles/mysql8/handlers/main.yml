@@ -1,0 +1,5 @@
+---
+- name: restart mysql
+  ansible.builtin.service:
+    name: "{{ 'mysql' if ansible_os_family == 'Debian' else 'mysqld' }}"
+    state: restarted

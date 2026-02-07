@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:{{ prometheus_port }}"]
+
+{% if monitoring_install_prometheus | bool %}
+  - job_name: "node_exporter"
+    static_configs:
+      - targets:
+{% for h in groups['wordpress_ec2'] %}
+        - "{{ hostvars[h].ansible_default_ipv4.address }}:{{ node_exporter_port }}"
+{% endfor %}
+{% endif %}

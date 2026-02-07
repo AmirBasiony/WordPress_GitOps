@@ -1,0 +1,28 @@
+[wordpress_ec2]
+%{ for _, id in web_instance_ids ~}
+${id}
+%{ endfor ~}
+
+[monitoring]
+${tolist(values(web_instance_ids))[0]}
+
+[mysql_ec2]
+${mysql_instance_id}
+
+[wordpress_ec2:vars]
+ansible_connection=amazon.aws.aws_ssm
+ansible_region=${aws_region}
+ansible_aws_ssm_timeout=60
+ansible_aws_ssm_bucket_name=${ssm_bucket}
+
+[monitoring:vars]
+ansible_connection=amazon.aws.aws_ssm
+ansible_region=${aws_region}
+ansible_aws_ssm_timeout=60
+ansible_aws_ssm_bucket_name=${ssm_bucket}
+
+[mysql_ec2:vars]
+ansible_connection=amazon.aws.aws_ssm
+ansible_region=${aws_region}
+ansible_aws_ssm_timeout=60
+ansible_aws_ssm_bucket_name=${ssm_bucket}

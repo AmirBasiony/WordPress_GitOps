@@ -1,0 +1,134 @@
+---
+# roles/wordpress/tasks/main.yml
+
+- name: Preflight | Ensure this role is running on Debian/Ubuntu
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+    fail_msg: "wordpress role currently supports Debian/Ubuntu only."
+
+# -------------------------
+# 1) Install runtime packages
+# -------------------------
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install WordPress runtime packages (nginx, php-fpm, extensions)
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - php8.1-fpm
+      - php8.1-mysql
+      - php8.1-cli
+      - php8.1-curl
+      - php8.1-gd
+      - php8.1-mbstring
+      - php8.1-xml
+      - php8.1-zip
+      - unzip
+      - curl
+    state: present
+
+- name: Ensure nginx and php-fpm are started and enabled
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - nginx
+    - php8.1-fpm
+
+# -------------------------
+# 2) Deploy WordPress application artifact
+# -------------------------
+- name: Create WordPress root directory
+  ansible.builtin.file:
+    path: "{{ wp_root }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+
+- name: Upload WordPress application artifact
+  ansible.builtin.copy:
+    src: "{{ wp_artifact_name }}"
+    dest: "/tmp/{{ wp_artifact_name }}"
+    mode: "0644"
+  when: wp_deploy_method == "artifact"
+
+# Assumes the tar.gz contains WordPress files at top level (index.php, wp-admin, wp-content, ...)
+- name: Extract WordPress application into wp_root
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ wp_artifact_name }}"
+    dest: "{{ wp_root }}"
+    remote_src: true
+  when: wp_deploy_method == "artifact"
+
+- name: Ensure correct ownership on wp_root
+  ansible.builtin.file:
+    path: "{{ wp_root }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    recurse: true
+
+# -------------------------
+# 3) Optional: manage wp-config.php (OFF by default)
+# -------------------------
+- name: Check if wp-config.php exists on target
+  ansible.builtin.stat:
+    path: "{{ wp_root }}/wp-config.php"
+  register: wpconfig_stat
+
+- name: Deploy wp-config.php only if forced or missing
+  ansible.builtin.template:
+    src: "wp-config.php"
+    dest: "{{ wp_root }}/wp-config.php"
+    owner: www-data
+    group: www-data
+    mode: "0640"
+  when:
+    - wp_manage_wp_config | bool
+    - (wp_force_wp_config | bool) or (not wpconfig_stat.stat.exists)
+
+# -------------------------
+# 5) Nginx site config (place template in its correct place)
+# -------------------------
+- name: Deploy nginx site config from template (sites-available)
+  ansible.builtin.template:
+    src: nginx_wordpress.conf.j2
+    dest: "/etc/nginx/sites-available/wordpress"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: wordpress | validate and reload nginx
+
+- ansible.builtin.import_tasks: grafana_proxy.yml
+  when: enable_monitoring | bool
+  tags: [grafana_proxy]
+  notify: wordpress | validate and reload nginx
+
+- name: Enable wordpress site (symlink to sites-enabled)
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/wordpress"
+    dest: "/etc/nginx/sites-enabled/wordpress"
+    state: link
+    force: true
+  notify: wordpress | validate and reload nginx
+
+- name: Disable default nginx site (remove default symlink)
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+  notify: wordpress | validate and reload nginx
+
+- name: Validate nginx configuration
+  ansible.builtin.command: nginx -t
+  changed_when: false
+
+# -------------------------
+# 6) Apply handlers now (so validations use latest config)
+# -------------------------
+- name: Apply service restarts/reloads now
+  ansible.builtin.meta: flush_handlers

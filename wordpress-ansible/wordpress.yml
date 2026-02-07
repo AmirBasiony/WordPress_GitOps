@@ -1,0 +1,67 @@
+---
+- name: Configure MySQL on the Database EC2 instance
+  hosts: mysql_ec2
+  become: true
+  gather_facts: true
+  pre_tasks:
+    - name: Validate we can reach the host
+      ansible.builtin.ping:
+  roles:
+    - role: mysql8
+      tags: [mysql, mysqld]
+
+- name: Configure EFS + WordPress + node_exporter on wordpress EC2 (excluding monitoring host)
+  hosts: wordpress_ec2
+  become: true
+  gather_facts: true
+  pre_tasks:
+    - name: Validate we can reach the host
+      ansible.builtin.ping:
+  roles:
+    - role: efs_mount
+      tags: [efs]
+    - role: wordpress
+      tags: [wordpress]
+    - role: monitoring
+      tags: [monitoring]
+      vars:
+        monitoring_install_node_exporter: true
+        monitoring_install_prometheus: false
+        monitoring_install_grafana: false
+      when: enable_monitoring | bool
+
+- name: Install Prometheus + Grafana on monitoring host
+  hosts: monitoring
+  become: true
+  gather_facts: true
+  roles:
+    - role: monitoring
+      tags: [monitoring]
+      vars:
+        monitoring_install_node_exporter: false
+        monitoring_install_prometheus: true
+        monitoring_install_grafana: true
+  post_tasks:
+    - name: Validate WordPress is reachable on /
+      ansible.builtin.uri:
+        url: "https://{{ wp_dns }}/"
+        status_code: [200, 301, 302]
+      register: wp_http
+      retries: 5
+      delay: 3
+      until: wp_http.status in [200, 301, 302]
+    - name: Validate Grafana is reachable on /grafana/
+      ansible.builtin.uri:
+        url: "https://{{ wp_dns }}/grafana/"
+        status_code: [200, 301, 302]
+      register: graf_http
+      retries: 20
+      delay: 3
+      until: graf_http.status in [200, 301, 302]
+      when: enable_monitoring | bool
+
+    - name: Print final URLs
+      ansible.builtin.debug:
+        msg:
+          - "WordPress URL: https://{{ wp_dns }}/"
+          - "Grafana URL:  https://{{ wp_dns }}/grafana/"

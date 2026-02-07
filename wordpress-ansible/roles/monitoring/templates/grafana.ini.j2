@@ -1,0 +1,13 @@
+[security]
+admin_user = {{ grafana_admin_user }}
+admin_password = {{ grafana_admin_password }}
+
+[server]
+# Grafana is reverse-proxied by nginx at /grafana/
+domain = {{ wp_dns }}
+root_url = https://{{ wp_dns }}{{ grafana_subpath }}
+serve_from_sub_path = true
+
+
+[auth.anonymous]
+enabled = false

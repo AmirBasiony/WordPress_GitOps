@@ -1,0 +1,22 @@
+---
+- name: restart grafana
+  ansible.builtin.service:
+    name: grafana-server
+    state: restarted
+
+- name: restart prometheus
+  ansible.builtin.service:
+    name: prometheus
+    state: restarted
+    enabled: true
+    
+- name: Ensure Prometheus started and enabled
+  ansible.builtin.service:
+    name: prometheus
+    state: started
+    enabled: true
+
+- name: reload nginx
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded

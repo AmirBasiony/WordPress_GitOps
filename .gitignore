@@ -1,0 +1,4 @@
+couldflare_API_token
+*tfvars*
+.terraform*
+*tfstate*

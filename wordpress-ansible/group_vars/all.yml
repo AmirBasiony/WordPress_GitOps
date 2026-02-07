@@ -1,0 +1,56 @@
+playbook_dir: "../inventory.ini"
+
+# Remote login
+remote_user_ubuntu: ubuntu
+
+# AWS
+vpc_cidr: "10.0.0.0/16"
+efs_dns_name: "fs-046bc30f7c5575120.efs.us-east-1.amazonaws.com"
+
+# DB env vars used by your wp-config.php
+wp_db_env:
+  DB_NAME: "{{ wp_db_name }}"
+  DB_USER: "{{ wp_db_user }}"
+  DB_PASSWORD: "{{ wp_db_password }}"
+  DB_HOST: "10.0.3.34"
+
+# MySQL
+mysql_root_password: "admin@obelion"
+wp_db_name: wordpress_db
+wp_db_user: wp_user
+wp_db_password: "admin@obelion"
+
+# Backups
+mysql_backup_dir: /var/backups/mysql
+mysql_backup_retention_days: 7
+
+# WordPress
+wp_domain: "_"
+wp_dns: "amir.cloud-stacks.com"
+wp_root: /var/www/wordpress
+efs_mount_path: "{{ wp_root }}/wp-content/uploads"
+wp_nginx_site_available: "/etc/nginx/sites-available/wordpress"
+
+# Artifact deployment
+wp_deploy_method: "artifact"
+wp_artifact_name: "wordpress_app.tar.gz"
+
+# Monitoring
+enable_monitoring: true
+
+grafana_admin_user: admin
+grafana_admin_password: "grafana@obelion"
+
+grafana_port: 3000
+grafana_subpath: "/grafana/"
+
+# Prometheus
+prometheus_config_file: "/etc/prometheus/prometheus.yml"
+prometheus_port: 9090
+
+# Exporters
+install_node_exporter: true
+node_exporter_port: 9100
+
+install_mysqld_exporter: false
+mysqld_exporter_port: 9104

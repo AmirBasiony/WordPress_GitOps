@@ -1,0 +1,47 @@
+---
+- name: Ensure required packages are installed (NFS client)
+  ansible.builtin.apt:
+    name:
+      - nfs-common
+    state: present
+    update_cache: true
+
+- name: Ensure WordPress root exists
+  ansible.builtin.file:
+    path: "{{ wp_root }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+
+- name: Ensure wp-content directory exists
+  ansible.builtin.file:
+    path: "{{ wp_root }}/wp-content"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+
+- name: Ensure EFS mount directory exists (uploads)
+  ansible.builtin.file:
+    path: "{{ efs_mount_path }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+
+- name: Mount EFS (NFSv4.1) and persist in fstab
+  ansible.builtin.mount:
+    path: "{{ efs_mount_path }}"
+    src: "{{ efs_dns_name }}:/"
+    fstype: nfs4
+    opts: "_netdev,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+    state: mounted
+
+- name: Ensure correct ownership after mount
+  ansible.builtin.file:
+    path: "{{ efs_mount_path }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    recurse: true

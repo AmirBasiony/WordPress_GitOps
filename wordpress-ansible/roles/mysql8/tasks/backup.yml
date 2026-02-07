@@ -1,0 +1,28 @@
+---
+- name: Ensure backup directory exists
+  ansible.builtin.file:
+    path: "{{ mysql_backup_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Install cron job for daily backups
+  ansible.builtin.cron:
+    name: "Daily MySQL all-databases backup"
+    user: root
+    minute: "10"
+    hour: "2"
+    job: >
+      /usr/bin/mysqldump --all-databases --single-transaction --routines --events
+      | /bin/gzip > {{ mysql_backup_dir }}/all-dbs-$(/bin/date +\%F).sql.gz
+
+- name: Install cron job to delete old backups
+  ansible.builtin.cron:
+    name: "Purge old MySQL backups"
+    user: root
+    minute: "40"
+    hour: "2"
+    job: >
+      /usr/bin/find {{ mysql_backup_dir }} -type f -name "*.sql.gz"
+      -mtime +{{ mysql_backup_retention_days }} -delete
