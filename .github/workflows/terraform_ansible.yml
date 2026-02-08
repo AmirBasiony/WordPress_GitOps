@@ -57,6 +57,7 @@ jobs:
 
       # Install Ansible and dependencies
       - name: Install Ansible and collections
+        if: ${{ github.event.inputs.action == 'build' }}
         run: |
           sudo apt update
           sudo apt install -y python3-pip
