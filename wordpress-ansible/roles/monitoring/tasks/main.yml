@@ -2,7 +2,7 @@
 - name: Preflight | Ensure Debian/Ubuntu (monitoring role)
   ansible.builtin.assert:
     that:
-      - ansible_facts["os_family"] == "Debian"
+      - ansible_os_family == "Debian"
     fail_msg: "monitoring role currently supports Debian/Ubuntu only."
 
 - name: Include node exporter tasks
