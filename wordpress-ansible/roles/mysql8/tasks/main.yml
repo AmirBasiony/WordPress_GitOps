@@ -7,11 +7,11 @@
 
 - name: Install MySQL 8 (Debian/Ubuntu)
   ansible.builtin.import_tasks: install_debian.yml
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: Install MySQL 8 (RedHat/Amazon Linux)
   ansible.builtin.import_tasks: install_redhat.yml
-  when: ansible_os_family in ["RedHat"]
+  when: ansible_facts["os_family"] in ["RedHat"]
 
 - name: Configure MySQL + create WordPress DB/user
   ansible.builtin.import_tasks: configure.yml
