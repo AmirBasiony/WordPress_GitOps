@@ -1,0 +1,83 @@
+name: Terraform Infrastructure Management with Ansible
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Choose environment (dev, stage, prod)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+      action:
+        description: 'Choose action (build or destroy)'
+        required: true
+        type: choice
+        options:
+          - build
+          - destroy
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      # Set up Terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Set the backend config for environment
+      - name: Set backend config for environment
+        run: |
+          echo "TF_BACKEND_CONFIG=backend/${{ github.event.inputs.environment }}.hcl" >> $GITHUB_ENV
+
+      # Initialize Terraform with the dynamic backend configuration
+      - name: Terraform init
+        run: terraform init -reconfigure -backend-config=${{ env.TF_BACKEND_CONFIG }}
+
+      # Install Ansible dependencies (if necessary)
+      - name: Install Ansible collections
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          ansible-galaxy collection install -r wordpress-ansible/requirements.yml --force
+
+      # Set Cloudflare API token environment variable for Terraform
+      - name: Set Cloudflare API Token for Terraform
+        run: echo "TF_VAR_cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" >> $GITHUB_ENV
+
+      # Terraform plan or apply based on action input
+      - name: Terraform plan or apply based on action
+        run: |
+          if [ "${{ github.event.inputs.action }}" == "build" ]; then
+            terraform plan -var="environment=${{ github.event.inputs.environment }}"
+            terraform apply -auto-approve -var="environment=${{ github.event.inputs.environment }}"
+          elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
+            terraform plan -destroy -var="environment=${{ github.event.inputs.environment }}"
+            terraform destroy -auto-approve -var="environment=${{ github.event.inputs.environment }}"
+          fi
+
+      # Output Terraform outputs
+      - name: Terraform output
+        run: terraform output
+
+    #   # Run Ansible playbook if the action is build
+    #   - name: Run Ansible Playbook
+    #     if: ${{ github.event.inputs.action == 'build' }}
+    #     run: |
+    #       ansible-playbook -i wordpress-ansible/inventory.ini wordpress-ansible/wordpress.yml

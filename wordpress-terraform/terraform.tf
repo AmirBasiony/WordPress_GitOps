@@ -1,27 +1,25 @@
 terraform {
-  backend "s3" {
-    bucket       = "amir-app"
-    key          = "infra/terraform.tfstate"
-    region       = "us-east-1"
-    encrypt      = true
-    use_lockfile = true
-  }
+  required_version = ">= 1.6.0"
+  # backend "s3" {
+  #   bucket       = "amir-app"
+  #   key          = "infra/terraform.tfstate"
+  #   region       = "us-east-1"
+  #   encrypt      = true
+  #   use_lockfile = true
+  # }
+  backend "s3" {} # will be configured per-environment via -backend-config
   required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
     cloudflare = {
       source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
-    # aws = {
-    #   source  = "hashicorp/aws"
-    #   version = " ~> 6.0"
-    # }
-    # tls = {
-    #   source  = "hashicorp/tls"
-    #   version = "~> 4.0"
-    # }
     local = {
       source  = "hashicorp/local"
-      version = "~> 2.6"
+      version = "~> 2.0"
     }
     null = {
       source  = "hashicorp/null"

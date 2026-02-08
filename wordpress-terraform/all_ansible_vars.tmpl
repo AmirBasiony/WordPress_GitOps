@@ -14,6 +14,7 @@ wp_db_env:
   DB_PASSWORD: "{{ wp_db_password }}"
   DB_HOST: "${mysql_private_ip}"
 
+
 # MySQL
 mysql_root_password: "admin@obelion"
 wp_db_name: wordpress_db
@@ -26,7 +27,7 @@ mysql_backup_retention_days: 7
 
 # WordPress
 wp_domain: "_"
-wp_dns: "amir.cloud-stacks.com"
+wp_dns: "${fqdn}"
 wp_root: /var/www/wordpress
 efs_mount_path: "{{ wp_root }}/wp-content/uploads"
 wp_nginx_site_available: "/etc/nginx/sites-available/wordpress"
