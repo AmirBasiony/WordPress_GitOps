@@ -82,6 +82,7 @@ jobs:
 
       # Output Terraform outputs
       - name: Terraform output
+        if: ${{ github.event.inputs.action == 'build' }}
         working-directory: ./wordpress-terraform  # Make sure to run Terraform in the correct directory
         run: terraform output
 

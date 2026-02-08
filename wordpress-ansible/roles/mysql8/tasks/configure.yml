@@ -16,7 +16,7 @@
     login_unix_socket: /var/run/mysqld/mysqld.sock
     check_implicit_admin: true
     state: present
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: Ensure root password is set (RedHat)
   community.mysql.mysql_user:
@@ -26,8 +26,9 @@
     login_user: root
     login_password: "{{ mysql_root_password }}"
     state: present
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts["os_family"] == "RedHat"
   ignore_errors: true
+  
 
 - name: Create WordPress database
   community.mysql.mysql_db:
