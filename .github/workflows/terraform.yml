@@ -28,11 +28,11 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v2
 
-      # Set up Terraform
+      # Set up Terraform (version 1.6.0 or higher)
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2  # Use v2 for the latest version support
         with:
-          terraform_version: 1.0.0
+          terraform_version: ">= 1.6.0"  # Ensure the version is at least 1.6.0
 
       # Configure AWS credentials using OIDC
       - name: Configure AWS credentials
@@ -48,13 +48,15 @@ jobs:
 
       # Initialize Terraform with the dynamic backend configuration
       - name: Terraform init
+        working-directory: ./wordpress-terraform  # Make sure to run Terraform in the correct directory
         run: terraform init -reconfigure -backend-config=${{ env.TF_BACKEND_CONFIG }}
 
-      # Install Ansible dependencies (if necessary)
-      - name: Install Ansible collections
+      # Install Ansible and dependencies
+      - name: Install Ansible and collections
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          sudo apt update
+          sudo apt install -y python3-pip
+          pip3 install ansible
           ansible-galaxy collection install -r wordpress-ansible/requirements.yml --force
 
       # Set Cloudflare API token environment variable for Terraform
@@ -63,6 +65,7 @@ jobs:
 
       # Terraform plan or apply based on action input
       - name: Terraform plan or apply based on action
+        working-directory: ./wordpress-terraform  # Make sure to run Terraform in the correct directory
         run: |
           if [ "${{ github.event.inputs.action }}" == "build" ]; then
             terraform plan -var="environment=${{ github.event.inputs.environment }}"
@@ -74,10 +77,12 @@ jobs:
 
       # Output Terraform outputs
       - name: Terraform output
+        working-directory: ./wordpress-terraform  # Make sure to run Terraform in the correct directory
         run: terraform output
 
     #   # Run Ansible playbook if the action is build
     #   - name: Run Ansible Playbook
     #     if: ${{ github.event.inputs.action == 'build' }}
+    #     working-directory: ./wordpress-ansible  # Make sure to run Ansible in the correct directory
     #     run: |
-    #       ansible-playbook -i wordpress-ansible/inventory.ini wordpress-ansible/wordpress.yml
+    #       ansible-playbook -i inventory.ini wordpress.yml

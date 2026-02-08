@@ -1,12 +1,5 @@
 terraform {
   required_version = ">= 1.6.0"
-  # backend "s3" {
-  #   bucket       = "amir-app"
-  #   key          = "infra/terraform.tfstate"
-  #   region       = "us-east-1"
-  #   encrypt      = true
-  #   use_lockfile = true
-  # }
   backend "s3" {} # will be configured per-environment via -backend-config
   required_providers {
     aws = {
